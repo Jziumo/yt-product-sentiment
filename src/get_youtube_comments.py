@@ -122,47 +122,52 @@ def get_video_title(video_url, api_key):
         print(f"An unexpected error occurred: {e}")
         return None
     
-def save_youtube_comments(video_url, sample_num = 100): 
+def save_youtube_comments(video_url, sample_num = 100, api_key=""): 
     """
     Save youtube video comments to a CSV file.
     """
-    if API_KEY == "":
+    if api_key == "" and API_KEY != "": 
+        api_key = API_KEY
+
+    if api_key == "":
         print("Please replace 'API_KEY' with your actual YouTube Data API key.")
-    else:
-        print(f"Fetching comments for: {video_url}")
-        video_comments = get_video_comments(video_url, API_KEY, max_results=100)
-        video_title = get_video_title(video_url, API_KEY)
+        return
+    
 
-        print(f'Video title: {video_title}')
+    print(f"Fetching comments for: {video_url}")
+    video_comments = get_video_comments(video_url, api_key, max_results=100)
+    video_title = get_video_title(video_url, api_key)
+
+    print(f'Video title: {video_title}')
+    
+    video_title = re.sub('[^a-zA-Z0-9]', ' ', video_title.strip())
+    video_title = re.sub('\s+', '_', video_title.strip())
+    video_title = video_title.lower()
+
+
+    if video_comments:
+        print(f"\nFound {len(video_comments)} comments. ")
+
+        expected_comments_num = min(len(video_comments), sample_num)
+
+        if expected_comments_num < len(video_comments):
+            video_comments = rd.sample(video_comments, expected_comments_num)
+
+        print(f'Randomly choose {expected_comments_num} comments as samples.')
+
+        os.makedirs("data/comments_unlabelled", exist_ok=True)
         
-        video_title = re.sub('[^a-zA-Z0-9]', ' ', video_title.strip())
-        video_title = re.sub('\s+', '_', video_title.strip())
-        video_title = video_title.lower()
+        with open("data/comments_unlabelled/comments_" + video_title + ".csv", "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f, delimiter='\t')
+            # writer.writeheader()
+            writer.writerow(['text', 'sentiment_for_product', 'sentiment_for_video'])
+            for comment in video_comments:
+                if comment.strip() == '': 
+                    continue
+                writer.writerow([comment, '', ''])
 
-
-        if video_comments:
-            print(f"\nFound {len(video_comments)} comments. ")
-
-            expected_comments_num = min(len(video_comments), sample_num)
-
-            if expected_comments_num < len(video_comments):
-                video_comments = rd.sample(video_comments, expected_comments_num)
-
-            print(f'Randomly choose {expected_comments_num} comments as samples.')
-
-            os.makedirs("data/comments_unlabelled", exist_ok=True)
-            
-            with open("data/comments_unlabelled/comments_" + video_title + ".csv", "w", newline="", encoding="utf-8") as f:
-                writer = csv.writer(f, delimiter='\t')
-                # writer.writeheader()
-                writer.writerow(['text', 'sentiment_for_product', 'sentiment_for_video'])
-                for comment in video_comments:
-                    if comment.strip() == '': 
-                        continue
-                    writer.writerow([comment, '', ''])
-
-        else:
-            print("No comments found or an error occurred.")
+    else:
+        print("No comments found or an error occurred.")
 
 
 if __name__ == "__main__":
