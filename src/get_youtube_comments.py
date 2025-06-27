@@ -122,7 +122,7 @@ def get_video_title(video_url, api_key):
 if __name__ == "__main__":
     # Replace with your YouTube video URL and API key
     YOUTUBE_VIDEO_URL = "https://youtu.be/1k4EQaBiOZc?si=wVOOcKxk_dZJhAiu" # Example: Rick Astley - Never Gonna Give You Up
-    YOUR_API_KEY = "AIzaSyAovCSJvOyVdtxFPEv7Kf30CZMfEaEWElc"  # <-- **IMPORTANT: Replace with your actual API key**
+    YOUR_API_KEY = ""  # <-- **IMPORTANT: Replace with your actual API key**
 
     video_id = extract_video_id(YOUTUBE_VIDEO_URL)
 
