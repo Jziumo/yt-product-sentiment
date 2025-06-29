@@ -2,7 +2,7 @@ import streamlit as st
 from get_youtube_comments import get_video_comments, get_video_title
 # app/app.py
 
-API_KEY = 'AIzaSyAovCSJvOyVdtxFPEv7Kf30CZMfEaEWElc'
+API_KEY = ''
 
 # Assuming these modules exist in your src directory and have the respective functions
 # from src.data.youtube_collector import get_youtube_comments
