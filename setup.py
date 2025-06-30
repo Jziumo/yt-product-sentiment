@@ -11,8 +11,5 @@ setup(
         ],
     },
     install_requires=[
-        'googleapiclient.errors', 
-        'googleapiclient.discovery', 
-        'streamlit'
     ],
 )

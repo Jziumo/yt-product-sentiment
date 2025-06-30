@@ -1,6 +1,8 @@
 import pandas as pd
 import re
 import os
+from clean_text import CleanText, RemoveNonEnglish
+
 
 def count_total_entries(): 
     """
@@ -54,8 +56,6 @@ def read_labeled_data(path_to_data):
 
     df = remove_missing_and_blank_values(df)
 
-    # df['sentiment_for_product'] = df['sentiment_for_product'].astype('int64')
-    # df['sentiment_for_video'] = df['sentiment_for_video'].astype('int64')
     df['sentiment_for_product'] = df['sentiment_for_product'].astype('str')
     df['sentiment_for_video'] = df['sentiment_for_video'].astype('str')
 
@@ -75,6 +75,20 @@ def read_labeled_data(path_to_data):
     df['sentiment_for_product'] = df['sentiment_for_product'].map(mapping)
     df['sentiment_for_video'] = df['sentiment_for_video'].map(mapping)
 
+    df['sentiment_for_product'] = df['sentiment_for_product'].str.strip()
+    df['sentiment_for_video'] = df['sentiment_for_video'].str.strip()
+
+    # df['sentiment_for_product'] = df['sentiment_for_product'].astype('str')
+    # df['sentiment_for_video'] = df['sentiment_for_video'].astype('str')
+
+    label2id = {"negative": int(0), "neutral": int(1), "positive": int(2)}
+    
+    df['sentiment_for_product'] = df['sentiment_for_product'].map(label2id)
+    df['sentiment_for_video'] = df['sentiment_for_video'].map(label2id)
+
+    df['sentiment_for_product'] = df['sentiment_for_product'].astype('Int64')
+    df['sentiment_for_video'] = df['sentiment_for_video'].astype('Int64')
+
     return df
 
 def read_all_labeled_data(): 
@@ -90,7 +104,43 @@ def read_all_labeled_data():
         df = read_labeled_data(os.path.join(dir, file))
         df_list.append(df)
 
-    return pd.concat(df_list)
+    combined_df = pd.concat(df_list)
+
+    combined_df = combined_df.reset_index(drop=True)
+
+    return combined_df
+
+
+
+def save_df(df, file_name): 
+    """
+    Save dataframe as a csv file.
+    """
+    dir = './data'
+
+    file_path = os.path.join(dir, file_name)
+    
+    # Save the DataFrame as a CSV file
+    df.to_csv(file_path, index=False, sep='\t')
+
+def load_df(file_name): 
+    """
+    Load the processed dataset based on the filename. 
+    """
+    dir = './data'
+
+    file_path = os.path.join(dir, file_name)
+
+    df = read_data(file_path, delimiter='\t')
+
+    df['sentiment_for_product'] = df['sentiment_for_product'].astype('Int64')
+    df['sentiment_for_video'] = df['sentiment_for_video'].astype('Int64')
+
+    df = df.reset_index(drop=True)
+
+    return df
+    
+
         
 def check_df(df): 
     print(f'The size of dataset: {df.shape}', end='\n\n')
@@ -99,8 +149,9 @@ def check_df(df):
     print(df['sentiment_for_video'].value_counts(), end='\n\n')
 
 if __name__ == '__main__': 
-    # df = read_labeled_data('./data/comment_labeled/labeled_yamaha_p_225_piano_review_better_music.txt')
-    # print(df['sentiment_for_video'].value_counts())
-    # df = read_labeled_data('./data/comment_labeled/labeled_yamaha_p_225_piano_review_better_music.txt')
-    df = read_all_labeled_data()
-    # check_df(df)
+    df = load_df('combined_text_clean.csv')
+    # df = RemoveNonEnglish(df).get_df()
+    # df = CleanText(df, do_stemming=False).get_df()
+    check_df(df)
+    # save_df(df, 'combined_text_clean.csv')
+

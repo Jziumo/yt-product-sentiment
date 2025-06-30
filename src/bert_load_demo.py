@@ -32,8 +32,12 @@ def preprocess_data(examples):
     encoding["labels"] = labels_matrix.tolist()
     return encoding
 
+def preprocess(example):
+    return tokenizer(example["text"], padding="max_length", truncation=True, max_length=128)
 
-df = data_process.read_labeled_data('./data/comment_labeled/labeled_Top_5_Best_Smartphones_of_2025_-_Labeled_Comments.csv')
+
+# df = data_process.read_labeled_data('./data/comment_labeled/labeled_Top_5_Best_Smartphones_of_2025_-_Labeled_Comments.csv')
+
 
 
 
@@ -48,8 +52,8 @@ df = data_process.read_labeled_data('./data/comment_labeled/labeled_Top_5_Best_S
 # Define label names
 # labels = [label for label in dataset.features.keys() if label != 'text']
 labels = ["negative", "neutral", "positive"]
-id2label = {-1: "negative", 0: "neutral", 1: "positive"}
-label2id = {"negative": -1, "neutral": 0, "positive": 1}
+id2label = {i: name for i, name in enumerate(labels)}
+label2id = {name: i for i, name in enumerate(labels)}
 
 # id2label = {idx:label for idx, label in enumerate(labels)}
 # label2id = {label:idx for idx, label in enumerate(labels)}
@@ -59,6 +63,10 @@ features = Features({
     'sentiment_for_product': ClassLabel(names=labels),
     'sentiment_for_video': ClassLabel(names=labels)
 })
+
+df = data_process.read_all_labeled_data()
+
+# df = df.reset_index(drop=True)
 
 dataset = Dataset.from_pandas(df, features=features)
 
@@ -75,19 +83,17 @@ dataset_dict = DatasetDict({
 
 # preprocess all datasets
 # tokenized_data = dataset_dict.map(preprocess_function, batched=True)
-encoded_dataset = dataset_dict.map(preprocess_data, batched=True)
+tokenized_dataset = dataset_dict.map(preprocess, batched=True)
 
-example = encoded_dataset['train'][0]
-print(example.keys())
-jz = 0
+# Rename label column for product sentiment
+tokenized_dataset = tokenized_dataset.rename_column("sentiment_for_product", "labels")
+tokenized_dataset = tokenized_dataset.remove_columns(["sentiment_for_video", "text"])
 
-# Set the format of our data to Pytorch tensors. 
-encoded_dataset.set_format("torch")
+# tokenized_dataset.set_format("torch")
 
 # Define model
 model = AutoModelForSequenceClassification.from_pretrained(
     model_path,
-    problem_type="multi_label_classification", 
     num_labels=3, 
     id2label=id2label, 
     label2id=label2id
@@ -148,13 +154,18 @@ def multi_label_metrics(predictions, labels, threshold=0.5):
                'accuracy': accuracy}
     return metrics
 
-def compute_metrics(p: EvalPrediction):
-    preds = p.predictions[0] if isinstance(p.predictions, 
-            tuple) else p.predictions
-    result = multi_label_metrics(
-        predictions=preds, 
-        labels=p.label_ids)
-    return result
+# def compute_metrics(p: EvalPrediction):
+#     preds = p.predictions[0] if isinstance(p.predictions, 
+#             tuple) else p.predictions
+#     result = multi_label_metrics(
+#         predictions=preds, 
+#         labels=p.label_ids)
+#     return result
+
+def compute_metrics(eval_pred):
+    logits, labels = eval_pred
+    preds = logits.argmax(axis=1)
+    return accuracy.compute(predictions=preds, references=labels)
 
 # jz = encoded_dataset['train'][0]['labels']
 # print(type(jz))
@@ -168,8 +179,8 @@ def compute_metrics(p: EvalPrediction):
 # print(jz2)
 # jz3 = 0
 
-outputs = model(input_ids=encoded_dataset['train']['input_ids'][0].unsqueeze(0), labels=encoded_dataset['train'][0]['labels'].unsqueeze(0))
-print(outputs)
+# outputs = model(input_ids=encoded_dataset['train']['input_ids'][0].unsqueeze(0), labels=encoded_dataset['train'][0]['labels'].unsqueeze(0))
+# print(outputs)
 
 
 # hyperparameters
@@ -179,7 +190,7 @@ num_epochs = 10
 metric_name = 'f1'
 
 training_args = TrainingArguments(
-    output_dir="bert-phishing-classifier_teacher",
+    output_dir="./models",
     learning_rate=lr,
     per_device_train_batch_size=batch_size,
     per_device_eval_batch_size=batch_size,
@@ -194,8 +205,8 @@ training_args = TrainingArguments(
 trainer = Trainer(
     model=model,
     args=training_args,
-    train_dataset=tokenized_data["train"],
-    eval_dataset=tokenized_data["test"],
+    train_dataset=tokenized_dataset["train"],
+    eval_dataset=tokenized_dataset["test"],
     tokenizer=tokenizer,
     data_collator=data_collator,
     compute_metrics=compute_metrics,
