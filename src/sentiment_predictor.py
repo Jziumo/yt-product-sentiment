@@ -1,13 +1,14 @@
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 from typing import Dict, Any
+import re
 
 class SentimentPredictor:
     """
     A class to predict sentiment for both product and video comments
     using pre-trained BERT models.
     """
-    def __init__(self, model_product_path: str, model_video_path: str, model_name: str = "bert-base-uncased"):
+    def __init__(self, model_name: str = "bert-base-uncased"):
         """
         Initializes the SentimentPredictor by loading the tokenizer and two sentiment models.
 
@@ -25,6 +26,8 @@ class SentimentPredictor:
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
 
         # Load both fine-tuned models
+        model_product_path = './models/sentiment_for_product'
+        model_video_path = './models/sentiment_for_video'
         self.model_product = AutoModelForSequenceClassification.from_pretrained(model_product_path)
         self.model_video = AutoModelForSequenceClassification.from_pretrained(model_video_path)
 
@@ -38,28 +41,30 @@ class SentimentPredictor:
         self.model_video.to(self.device)
         print(f"Models loaded and moved to {self.device} device.")
 
-    def predict(self, comment_text: str) -> Dict[str, str]:
+    def predict(self, comment: str) -> Dict[str, str]:
         """
         Predicts the sentiment for a given comment text for both product and video.
 
         Args:
-            comment_text (str): The comment text. 
+            comment (str): The comment text. 
 
         Returns:
             Dict[str, str]: A dictionary containing predicted sentiments:
                             {"sentiment_for_product": "sentiment_label",
                              "sentiment_for_video": "sentiment_label"}
         """
-        if not isinstance(comment_text, str):
-            raise TypeError("Input 'comment_text' must be a string.")
-        if not comment_text.strip():
+        if not isinstance(comment, str):
+            raise TypeError("Input comment must be a string.")
+        if not comment.strip():
             return {
-                "sentiment_for_product": "neutral", # Or appropriate default/error handling
+                "sentiment_for_product": "neutral",
                 "sentiment_for_video": "neutral"
             }
 
+        comment = self.clean_text(comment)
+
         # Tokenize input and move to the appropriate device
-        inputs = self.tokenizer(comment_text, return_tensors="pt", truncation=True, padding=True, max_length=128)
+        inputs = self.tokenizer(comment, return_tensors="pt", truncation=True, padding=True, max_length=128)
         inputs = {key: val.to(self.device) for key, val in inputs.items()}
 
         # Predict for product sentiment
@@ -92,7 +97,7 @@ class SentimentPredictor:
 
         text = re.sub(r'\s+', ' ', text).strip()
 
-        if self.do_stemming: 
+        if do_stemming: 
             parts = text.split()
             parts = [self.ps.stem(part) for part in parts]
             text = ' '.join(parts)
@@ -107,10 +112,7 @@ if __name__ == "__main__":
     video_model_path = "./models/sentiment_for_video/"   # Or wherever your video model is saved
 
     try:
-        predictor = SentimentPredictor(
-            model_product_path=product_model_path,
-            model_video_path=video_model_path
-        )
+        predictor = SentimentPredictor()
 
         # Test comments
         comment1 = "This product is amazing, completely changed my life!"

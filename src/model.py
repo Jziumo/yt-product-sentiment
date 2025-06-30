@@ -13,6 +13,8 @@ from writer import output_to_file
 from sklearn.metrics import accuracy_score, f1_score
 from transformers import EarlyStoppingCallback
 from sklearn.model_selection import train_test_split
+import numpy as np
+from evaluation import Evaluation
 
 class ModelFineTune: 
     """
@@ -142,17 +144,25 @@ class ModelFineTune:
 
         trainer.train()
 
-        # apply model to validation dataset
+        # Save the trained model. 
+        trainer.save_model(os.path.join('./models', column_focused))
+        self.tokenizer.save_pretrained(os.path.join('./models', column_focused))
+
+        # apply model to test data
         predictions = trainer.predict(tokenized["test"])
 
-        # Extract the logits and labels from the predictions object
-        logits = predictions.predictions
-        labels = predictions.label_ids
+        # Evaluate
+        Evaluation(predictions, column_focused).evaluate()
 
-        # Use your compute_metrics function
-        metrics = self.compute_metrics((logits, labels))
+        # # Extract the logits and labels from the predictions object
+        # logits = predictions.predictions
+        # labels = predictions.label_ids
+
+        # # Use your compute_metrics function
+        # metrics = self.compute_metrics((logits, labels))
         
-        output_to_file(filename=column_focused+'_metrics.txt', text=str(metrics))
+        # output_to_file(filename=column_focused+'_metrics.txt', text=str(metrics))
+
 
         return model
     
