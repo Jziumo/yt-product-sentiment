@@ -15,13 +15,14 @@ from transformers import EarlyStoppingCallback
 from sklearn.model_selection import train_test_split
 import numpy as np
 from evaluation import Evaluation
+import pandas as pd
 
 class ModelFineTune: 
     """
     Use the manually labeled data to fine-tune the model. 
     """
 
-    def __init__(self, max_length=128):
+    def __init__(self, data_name, max_length=128):
         self.model_name="bert-base-uncased"
         self.labels = ["negative", "neutral", "positive"]
         self.label2id = {"negative": 0, "neutral": 1, "positive": 2}
@@ -32,25 +33,17 @@ class ModelFineTune:
         self.columns = ["sentiment_for_product", "sentiment_for_video"]
         # self.dataset_dict = self.load_and_cast_dataset()
         self.data_collator = DataCollatorWithPadding(tokenizer=self.tokenizer)
+        self.data_name = data_name
+
+    def get_oversampled_df(self, df, column_focused): 
+        df_negative = df[df[column_focused] == 0]
+        df_oversampled = pd.concat([df, df_negative.sample(n=300, replace=True, random_state=42)]) 
+        return df_oversampled
 
     def load_and_cast_dataset(self, column_focused):
-        df = load_df('combined_text_clean.csv')
-        # features = Features({
-        #     "text": Value("string"),
-        #     "sentiment_for_product": ClassLabel(names=self.labels),
-        #     "sentiment_for_video": ClassLabel(names=self.labels),
-        # })
-        # dataset = Dataset.from_pandas(df, features=features)
+        df = load_df(self.data_name)
 
-        # # Split the data into train, test and validation. 
-        # train_test_split = dataset.train_test_split(test_size=0.2, seed=114)
-        # test_val_split = train_test_split['test'].train_test_split(test_size=0.5, seed=514) 
-
-        # dataset_dict = DatasetDict({
-        #     'train': train_test_split['train'],
-        #     'test': test_val_split['train'],
-        #     'validation': test_val_split['test']
-        # })
+        df = self.get_oversampled_df(df, column_focused)
 
         df_train, df_temp = train_test_split(
             df,
@@ -145,8 +138,8 @@ class ModelFineTune:
         trainer.train()
 
         # Save the trained model. 
-        trainer.save_model(os.path.join('./models', column_focused))
-        self.tokenizer.save_pretrained(os.path.join('./models', column_focused))
+        trainer.save_model(os.path.join('./models', column_focused + '_current'))
+        self.tokenizer.save_pretrained(os.path.join('./models', column_focused + '_current'))
 
         # apply model to test data
         predictions = trainer.predict(tokenized["test"])
@@ -154,21 +147,11 @@ class ModelFineTune:
         # Evaluate
         Evaluation(predictions, column_focused).evaluate()
 
-        # # Extract the logits and labels from the predictions object
-        # logits = predictions.predictions
-        # labels = predictions.label_ids
-
-        # # Use your compute_metrics function
-        # metrics = self.compute_metrics((logits, labels))
-        
-        # output_to_file(filename=column_focused+'_metrics.txt', text=str(metrics))
-
-
         return model
     
 
 
 if __name__ == '__main__': 
-    obj = ModelFineTune()
+    obj = ModelFineTune('combined_text_clean.csv')
     obj.train_single_model('sentiment_for_product')
     obj.train_single_model('sentiment_for_video')

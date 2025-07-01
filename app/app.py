@@ -1,57 +1,37 @@
 import streamlit as st
 from get_youtube_comments import get_video_comments, get_video_title
-# app/app.py
+from sentiment_predictor import SentimentPredictor
+import pandas as pd
+import plotly.express as px
 
-API_KEY = ''
+API_KEY = 'AIzaSyAovCSJvOyVdtxFPEv7Kf30CZMfEaEWElc'
 
-# Assuming these modules exist in your src directory and have the respective functions
-# from src.data.youtube_collector import get_youtube_comments
-# from src.data.preprocessor import preprocess_text
-# from src.model.sentiment_model import analyze_sentiment
+# --- Placeholder Functions ---
+st.markdown("""
+<style>
+.positive-sentiment { /* ... */ }
+.negative-sentiment { /* ... */ }
+.neutral-sentiment { /* ... */ }
+/* ... other styles ... */
+</style>
+""", unsafe_allow_html=True)
 
-# --- Placeholder Functions (REMOVE IN YOUR ACTUAL PROJECT) ---
-# These are just to make the app runnable for demonstration purposes
-# You MUST replace these with your actual functions from src/
-def get_youtube_comments(url):
-    """Simulates fetching comments."""
-    st.info(f"Simulating fetching comments for: {url}")
-    # In a real app, you'd use google-api-python-client here
-    if "error" in url: # Simulate an error
-        raise ValueError("Simulated error during comment fetching.")
-    return [
-        "This product is amazing! Highly recommend.",
-        "It's okay, nothing special. A bit overpriced.",
-        "Absolutely terrible, wasted my money.",
-        "Good value for money, very useful.",
-        "I'm neutral about it. It does the job.",
-        "Worst purchase ever. Stay away!",
-        "Fantastic quality and fast delivery.",
-        "Not bad, but could be better.",
-        "Love it! Changed my life.",
-        "Meh. Disappointed.",
-    ]
+def style_sentiment_cell(val):
+    val_lower = str(val).lower() # Ensure val is string before lower()
+    if 'positive' in val_lower:
+        return 'background-color: #d4edda; color: #155724; font-weight: bold;'
+    elif 'negative' in val_lower:
+        return 'background-color: #f8d7da; color: #721c24; font-weight: bold;'
+    elif 'neutral' in val_lower:
+        return 'background-color: #fff3cd; color: #856404; font-weight: bold;'
+    return '' # Return empty string for no styling
 
-def preprocess_text(text):
-    """Simulates text preprocessing."""
-    st.info(f"Simulating preprocessing: '{text[:30]}...'")
-    # In a real app, you'd clean, tokenize, remove stopwords, etc.
-    return text.lower()
 
-def analyze_sentiment(text):
-    """Simulates sentiment analysis."""
-    st.info(f"Simulating sentiment for: '{text[:30]}...'")
-    # In a real app, you'd use your pre-trained model (e.g., Hugging Face, NLTK, TextBlob)
-    if "amazing" in text or "recommend" in text or "fantastic" in text or "love" in text:
-        return {'label': 'positive', 'score': 0.9}
-    elif "terrible" in text or "wasted" in text or "worst" in text or "disappointed" in text:
-        return {'label': 'negative', 'score': 0.8}
-    else:
-        return {'label': 'neutral', 'score': 0.6}
 # --- END Placeholder Functions ---
 
 
-# --- Streamlit App Layout ---
 
+# --- START ---
 # Set wide layout for better display of results (optional)
 st.set_page_config(layout="wide", page_title="YouTube Review Sentiment Analyzer")
 
@@ -59,24 +39,21 @@ st.set_page_config(layout="wide", page_title="YouTube Review Sentiment Analyzer"
 st.title("🎬 YouTube Product Review Sentiment Analyzer")
 
 st.markdown(
-    """
-    Enter a YouTube video URL (preferably a product review) below to analyze the sentiment
-    of its comments.
-    """
+"""
+Enter a YouTube video URL (preferably a product review) below to analyze the sentiment
+of its comments.
+"""
 )
 
 # Input for YouTube URL
 youtube_url = st.text_input(
-    "Paste YouTube Video URL here:",
-    placeholder="e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    key="url_input" # Unique key for this widget
+"Paste YouTube Video URL here:",
+placeholder="e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+key="url_input" # Unique key for this widget
 )
 
 # Button to trigger analysis
 if st.button("Analyze Video Comments", key="analyze_button"):
-    # comments = get_video_comments(youtube_url)
-    # title = get_video_title(youtube_url)
-
     if youtube_url:
         # Basic URL validation (you might want more robust regex here)
         if "youtube.com/watch" not in youtube_url and "youtu.be/" not in youtube_url:
@@ -98,76 +75,158 @@ if st.button("Analyze Video Comments", key="analyze_button"):
                     else:
                         st.warning("Could not retrieve video title.")
 
-                    # --- Display Comments ---
-                    st.subheader("Raw Comments:")
-                    if comments:
-                        # Display comments in an expandable section for neatness
-                        with st.expander(f"View {len(comments)} Comments"):
-                            for i, comment in enumerate(comments[:10]): # Show first 10
-                                st.write(f"**Comment {i+1}:** {comment}")
-                            if len(comments) > 10:
-                                st.info(f"... and {len(comments) - 10} more comments.")
+                    # The predictor based on our trained model
+                    predictor = SentimentPredictor()          
+
+                    if not comments:
+                        st.warning("No comments found for this video, or fetching failed. Cannot perform sentiment analysis.")
+                        st.write("*(Note: Some videos disable comments or have no comments yet.)*")
                     else:
-                        st.info("No comments found for this video.")
+                        # Process all comments for sentiment
+                        st.subheader("Performing Sentiment Analysis...")
+                        # To store structured data for the table
+                        all_comment_results = [] 
 
-                    # --- Continue with Sentiment Analysis (from previous code) ---
-                    # You would put the rest of your sentiment analysis logic here,
-                    # which uses 'comments' (the actual comments fetched).
+                        # Use st.progress for visual feedback during processing
+                        progress_bar = st.progress(0)
+                        status_text = st.empty()
 
-                    # if comments: # Only proceed with sentiment analysis if comments were fetched
-                    #     st.subheader("📊 Sentiment Analysis Results")
-                    #     sentiment_results = []
-                    #     for i, comment in enumerate(comments):
-                    #         # Display progress in the spinner area
-                    #         st.spinner(f"Processing comment {i+1}/{len(comments)} for sentiment...")
-                    #         processed_comment = preprocess_text(comment)
-                    #         sentiment = analyze_sentiment(processed_comment)
-                    #         sentiment_results.append({
-                    #             'original_comment': comment,
-                    #             'processed_comment': processed_comment,
-                    #             'sentiment_label': sentiment['label'],
-                    #             'sentiment_score': sentiment['score']
-                    #         })
+                        for i, comment in enumerate(comments):
+                            status_text.text(f"Analyzing comment {i+1} of {len(comments)}...")
+                            # Predict result for this comment
+                            result_dict = predictor.predict(comment)
 
-                    #     # Calculate counts
-                    #     positive_count = sum(1 for res in sentiment_results if res['sentiment_label'] == 'positive')
-                    #     negative_count = sum(1 for res in sentiment_results if res['sentiment_label'] == 'negative')
-                    #     neutral_count = sum(1 for res in sentiment_results if res['sentiment_label'] == 'neutral')
-                    #     total_analyzed = len(sentiment_results)
+                            if result_dict == None: 
+                                continue
 
-                    #     if total_analyzed > 0:
-                    #         st.write(f"**Total Comments Analyzed:** {total_analyzed}")
-                    #         col1, col2, col3 = st.columns(3) # Use columns for metrics
-                    #         with col1:
-                    #             st.metric(label="👍 Positive Reviews", value=f"{positive_count} ({(positive_count/total_analyzed)*100:.1f}%)")
-                    #         with col2:
-                    #             st.metric(label="👎 Negative Reviews", value=f"{negative_count} ({(negative_count/total_analyzed)*100:.1f}%)")
-                    #         with col3:
-                    #             st.metric(label="😐 Neutral Reviews", value=f"{neutral_count} ({(neutral_count/total_analyzed)*100:.1f}%)")
+                            all_comment_results.append({
+                                "Comment Text": comment,
+                                "Sentiment for Product": result_dict.get("sentiment_for_product", "N/A"),
+                                "Sentiment for Video": result_dict.get("sentiment_for_video", "N/A")
+                            })
+                            progress_bar.progress((i + 1) / len(comments))
 
-                    #         # Optional: Display a chart
-                    #         import pandas as pd
-                    #         import plotly.express as px
+                        # Clear the status text after completion
+                        status_text.empty() 
+                        # Clear the progress bar
+                        progress_bar.empty() 
 
-                    #         sentiment_data = pd.DataFrame({
-                    #             'Sentiment': ['Positive', 'Negative', 'Neutral'],
-                    #             'Count': [positive_count, negative_count, neutral_count]
-                    #         })
-                    #         fig = px.pie(sentiment_data, values='Count', names='Sentiment', title='Distribution of Sentiments',
-                    #                      color_discrete_map={'Positive':'#28a745', 'Negative':'#dc3545', 'Neutral':'#ffc107'})
-                    #         st.plotly_chart(fig, use_container_width=True)
+                        st.success("Sentiment analysis complete for all comments!")
 
-                    #         st.subheader("💬 Individual Comment Sentiment")
-                    #         df_results = pd.DataFrame(sentiment_results)
-                    #         st.dataframe(df_results[['original_comment', 'sentiment_label', 'sentiment_score']], use_container_width=True)
-                    #     else:
-                    #         st.info("No sentiments to summarize from the fetched comments.")
-                    # else:
-                    #     st.info("Cannot perform sentiment analysis as no comments were fetched.")
+                        # Display the Comments Table with Sentiments
+                        st.subheader("Detailed Comment Analysis")
+                        with st.expander(f"Click to view all {len(all_comment_results)} comments with sentiment results"):
+                            if all_comment_results:
+                                df_comments = pd.DataFrame(all_comment_results)
+
+                                styled_df = df_comments.style.applymap(
+                                    style_sentiment_cell,
+                                    subset=['Sentiment for Product', 'Sentiment for Video']
+                                )
+
+                                st.dataframe(styled_df, use_container_width=True, height=500)
+                                # st.dataframe(df_comments, use_container_width=True)
+                            else:
+                                st.info("No comments were analyzed.")
+
+                        # --- Calculate and Display Overall Sentiment Scores ---
+                        st.markdown("---") # Visual separator
+                        st.subheader("📊 Overall Sentiment Scores (out of 100)")
+
+                        if all_comment_results:
+                            # Convert results to DataFrame for easier counting
+                            df_overall_sentiments = pd.DataFrame(all_comment_results)
+
+                            # --- Product Sentiment Score Calculation ---
+                            product_counts = df_overall_sentiments['Sentiment for Product'].value_counts()
+                            product_pos = product_counts.get('positive', 0)
+                            product_neu = product_counts.get('neutral', 0)
+                            product_neg = product_counts.get('negative', 0)
+                            total_product_comments = product_pos + product_neu + product_neg
+
+                            if total_product_comments > 0:
+                                # Raw score calculation (positive=1, neutral=0, negative=-1)
+                                raw_product_score = (product_pos * 1) + (product_neu * 0.5) + (product_neg * -1.5)
+
+                                # Normalize to 0-100 scale
+                                min_raw_score = -total_product_comments
+                                max_raw_score = total_product_comments
+                                product_overall_score = ((raw_product_score - min_raw_score) / (max_raw_score - min_raw_score)) * 100
+                            else:
+                                # Default if no comments
+                                product_overall_score = 0.0 
+
+                            # --- Video Sentiment Score Calculation ---
+                            video_counts = df_overall_sentiments['Sentiment for Video'].value_counts()
+                            video_pos = video_counts.get('positive', 0)
+                            video_neu = video_counts.get('neutral', 0)
+                            video_neg = video_counts.get('negative', 0)
+                            total_video_comments = video_pos + video_neu + video_neg
+
+                            if total_video_comments > 0:
+                                # Raw score calculation (positive=1, neutral=0, negative=-1)
+                                raw_video_score = (video_pos * 1) + (video_neu * 0.5) + (video_neg * -1.5)
+
+                                # Normalize to 0-100 scale
+                                min_raw_score_video = -total_video_comments # Could be different if comment sets differ
+                                max_raw_score_video = total_video_comments
+                                video_overall_score = ((raw_video_score - min_raw_score_video) / (max_raw_score_video - min_raw_score_video)) * 100
+                            else:
+                                video_overall_score = 0.0 # Default if no comments
+
+                            # --- Display Scores Inline ---
+                            col1, col2 = st.columns(2) # Create two columns for inline display
+
+                            with col1:
+                                st.metric(label="Product Overall Score", value=f"{product_overall_score:.1f}", delta=None)
+                                # You can add a delta if you have a previous score to compare against
+
+                            with col2:
+                                st.metric(label="Video Overall Score", value=f"{video_overall_score:.1f}", delta=None)
+
+                            st.markdown("---") # Another separator
+
+                        else:
+                            st.info("No comments were analyzed to compute overall scores.")
+
+                        # Percentage of each value
+                        st.subheader("📊 Overall Sentiment Summary")
+
+                        product_sentiments = [res["Sentiment for Product"] for res in all_comment_results]
+                        video_sentiments = [res["Sentiment for Video"] for res in all_comment_results]
+
+                        if product_sentiments and video_sentiments:
+                            st.markdown("#### Product Sentiment Overview")
+                            product_counts = pd.Series(product_sentiments).value_counts()
+                            total_product = product_counts.sum()
+                            for sentiment_type in ['positive', 'neutral', 'negative']:
+                                count = product_counts.get(sentiment_type, 0)
+                                percentage = (count / total_product) * 100 if total_product > 0 else 0
+                                st.metric(label=f"Product: {sentiment_type.capitalize()}", value=f"{percentage:.1f}%")
+
+                            st.markdown("#### Video Sentiment Overview")
+                            video_counts = pd.Series(video_sentiments).value_counts()
+                            total_video = video_counts.sum()
+                            for sentiment_type in ['positive', 'neutral', 'negative']:
+                                count = video_counts.get(sentiment_type, 0)
+                                percentage = (count / total_video) * 100 if total_video > 0 else 0
+                                st.metric(label=f"Video: {sentiment_type.capitalize()}", value=f"{percentage:.1f}%")
+
+                            # Optional: Add charts here as well for overall summary
+                            # Example: A pie chart for product sentiment
+                            
+                            # product_df = pd.DataFrame({'Sentiment': product_counts.index, 'Count': product_counts.values})
+                            # fig_product = px.pie(product_df, values='Count', names='Sentiment', title='Product Sentiment Distribution')
+                            # st.plotly_chart(fig_product, use_container_width=True)
+
+
+                        else:
+                            st.info("No sentiments to summarize from the analyzed comments.")
+
 
                 except Exception as e:
                     st.error(f"An unexpected error occurred during analysis: {e}")
                     st.exception(e) # Displays full traceback for debugging
     else:
         st.warning("Please enter a YouTube video URL to proceed.")
-    
+

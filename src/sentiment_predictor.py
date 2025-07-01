@@ -2,6 +2,8 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 from typing import Dict, Any
 import re
+from langdetect import detect, DetectorFactory
+from langdetect.lang_detect_exception import LangDetectException
 
 class SentimentPredictor:
     """
@@ -26,8 +28,8 @@ class SentimentPredictor:
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
 
         # Load both fine-tuned models
-        model_product_path = './models/sentiment_for_product'
-        model_video_path = './models/sentiment_for_video'
+        model_product_path = './models/sentiment_for_product_current'
+        model_video_path = './models/sentiment_for_video_current'
         self.model_product = AutoModelForSequenceClassification.from_pretrained(model_product_path)
         self.model_video = AutoModelForSequenceClassification.from_pretrained(model_video_path)
 
@@ -56,10 +58,16 @@ class SentimentPredictor:
         if not isinstance(comment, str):
             raise TypeError("Input comment must be a string.")
         if not comment.strip():
-            return {
-                "sentiment_for_product": "neutral",
-                "sentiment_for_video": "neutral"
-            }
+            return None
+
+        try: 
+            language = self.get_language(comment)
+            if language != 'en':
+                # If the language is not English
+                return None
+        except LangDetectException:
+            # If the text cannot be recognized into any language
+            return None
 
         comment = self.clean_text(comment)
 
@@ -86,6 +94,12 @@ class SentimentPredictor:
             "sentiment_for_product": sentiment_product,
             "sentiment_for_video": sentiment_video
         }
+    
+    def get_language(self, text): 
+        """
+        Return the most possible language of the given text.
+        """
+        return detect(text)
 
 
     def clean_text(self, text, do_stemming=False): 
@@ -104,39 +118,27 @@ class SentimentPredictor:
         
         return text
 
-# --- Example Usage ---
 if __name__ == "__main__":
-    # IMPORTANT: Replace these paths with the actual paths where your fine-tuned models are saved.
-    # For instance, if you saved them in your /workspace/ folder:
-    product_model_path = "./models/sentiment_for_product/" # Or wherever your product model is saved
-    video_model_path = "./models/sentiment_for_video/"   # Or wherever your video model is saved
+    predictor = SentimentPredictor()
 
-    try:
-        predictor = SentimentPredictor()
+    # Test comments
+    comment1 = "This product is amazing, completely changed my life!"
+    comment2 = "The video was so boring and unhelpful, what a waste of time."
+    comment3 = "The product is okay, but the video was pretty good."
+    comment4 = "This comment is irrelevant to both product and video."
+    comment5 = "" # Empty comment test
 
-        # Test comments
-        comment1 = "This product is amazing, completely changed my life!"
-        comment2 = "The video was so boring and unhelpful, what a waste of time."
-        comment3 = "The product is okay, but the video was pretty good."
-        comment4 = "This comment is irrelevant to both product and video."
-        comment5 = "" # Empty comment test
+    print(f"Comment: '{comment1}'")
+    print(f"Prediction: {predictor.predict(comment1)}\n")
 
-        print(f"Comment: '{comment1}'")
-        print(f"Prediction: {predictor.predict(comment1)}\n")
+    print(f"Comment: '{comment2}'")
+    print(f"Prediction: {predictor.predict(comment2)}\n")
 
-        print(f"Comment: '{comment2}'")
-        print(f"Prediction: {predictor.predict(comment2)}\n")
+    print(f"Comment: '{comment3}'")
+    print(f"Prediction: {predictor.predict(comment3)}\n")
 
-        print(f"Comment: '{comment3}'")
-        print(f"Prediction: {predictor.predict(comment3)}\n")
-
-        print(f"Comment: '{comment4}'")
-        print(f"Prediction: {predictor.predict(comment4)}\n")
-        
-        print(f"Comment: '{comment5}'")
-        print(f"Prediction: {predictor.predict(comment5)}\n")
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        print("Please ensure your model paths are correct and PyTorch/Transformers are installed.")
-        print("Example paths: './models/sentiment_for_product/' if 'models' is in your current directory.")
+    print(f"Comment: '{comment4}'")
+    print(f"Prediction: {predictor.predict(comment4)}\n")
+    
+    print(f"Comment: '{comment5}'")
+    print(f"Prediction: {predictor.predict(comment5)}\n")

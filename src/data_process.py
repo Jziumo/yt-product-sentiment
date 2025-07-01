@@ -1,7 +1,7 @@
 import pandas as pd
 import re
 import os
-from clean_text import CleanText, RemoveNonEnglish
+from clean_text import CleanText, RemoveNonEnglish, Stopwords
 
 
 def count_total_entries(): 
@@ -111,7 +111,6 @@ def read_all_labeled_data():
     return combined_df
 
 
-
 def save_df(df, file_name): 
     """
     Save dataframe as a csv file.
@@ -140,7 +139,7 @@ def load_df(file_name):
 
     return df
     
-
+# smote
         
 def check_df(df): 
     print(f'The size of dataset: {df.shape}', end='\n\n')
@@ -150,8 +149,7 @@ def check_df(df):
 
 if __name__ == '__main__': 
     df = load_df('combined_text_clean.csv')
-    # df = RemoveNonEnglish(df).get_df()
-    # df = CleanText(df, do_stemming=False).get_df()
+    # df = CleanText(df, do_stemming=True, stopwords=[]).get_df()
     check_df(df)
-    # save_df(df, 'combined_text_clean.csv')
 
+    # save_df(df, 'combined_text_clean_stemming.csv')
