@@ -3,6 +3,8 @@
 /src/jziumo.py
 /data/comments_unlabelled
 /src/youtube_video_commments_sentiment_analyzer.egg-info
+/src/__pycache__
+/models
 src/__pycache__
 models/sentiment_for_product
 models/sentiment_for_video
