@@ -138,8 +138,6 @@ def load_df(file_name):
     df = df.reset_index(drop=True)
 
     return df
-    
-# smote
         
 def check_df(df): 
     print(f'The size of dataset: {df.shape}', end='\n\n')
