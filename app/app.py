@@ -4,7 +4,7 @@ from sentiment_predictor import SentimentPredictor
 import pandas as pd
 import plotly.express as px
 
-API_KEY = 'AIzaSyAovCSJvOyVdtxFPEv7Kf30CZMfEaEWElc'
+API_KEY = ''
 
 # --- Placeholder Functions ---
 st.markdown("""
