@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Our project analyzes comment sentiment on Youtube product review videos. To achieve this, we fine-tuned a pre-trained **BERT** model ("bert-base-uncased") with 1,185 manually labeled entries. 
+Our project analyzes comment sentiment on Youtube product review videos. To achieve this, we fine-tuned a pre-trained **BERT** model (`"bert-base-uncased"`) with 1,185 manually labeled entries. 
 
 To download our fine-tuned model, click [here](https://drive.google.com/file/d/1P52GL9VLMxN9SAsMYR7SdOkV9b7TUQ4N/view?usp=sharing). 
 
