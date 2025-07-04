@@ -11,3 +11,5 @@ data/combined_origin.csv
 data/combined_remove_nltk_stopwords.csv
 data/combined_remove_specified_words.csv
 data/combined_text_clean_stemming.csv
+/backups
+/model_saved
