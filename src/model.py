@@ -37,7 +37,7 @@ class ModelFineTune:
 
     def get_oversampled_df(self, df, column_focused): 
         df_negative = df[df[column_focused] == 0]
-        df_oversampled = pd.concat([df, df_negative.sample(n=300, replace=True, random_state=42)]) 
+        df_oversampled = pd.concat([df, df_negative.sample(n=200, replace=True, random_state=42)]) 
         return df_oversampled
 
     def load_and_cast_dataset(self, column_focused):
