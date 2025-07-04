@@ -1,10 +1,10 @@
 import streamlit as st
-from get_youtube_comments import get_video_comments, get_video_title
+from get_youtube_comments import get_video_comments, get_video_title, get_api_key
 from sentiment_predictor import SentimentPredictor
 import pandas as pd
 import plotly.express as px
 
-API_KEY = ''
+API_KEY = get_api_key()
 
 # --- Placeholder Functions ---
 st.markdown("""

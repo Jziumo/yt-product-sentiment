@@ -5,10 +5,28 @@ import csv
 import os
 import random as rd
 import sys
+import toml
 
-# Replace with your own key or Jin's Key
-# For some reasons I cannot directly put it here.
-API_KEY = ""
+
+def get_api_key(config_file='config.toml'):
+    """
+    Retrieves the YouTube API key from './config.toml'
+    """
+    if not os.path.exists(config_file):
+        raise FileNotFoundError(f"Configuration file '{config_file}' not found.")
+
+    with open(config_file, 'r') as f:
+        config = toml.load(f)
+
+    try:
+        api_key = config['api_keys']['youtube']
+    except KeyError:
+        raise KeyError(f"Key 'youtube' not found under '[api_keys]' section in {config_file}.")
+    
+    if api_key == '': 
+        raise ValueError(f'Please input your YouTube Data API key in {config_file}. ')
+
+    return api_key
 
 def extract_video_id(youtube_url):
     """
@@ -126,13 +144,8 @@ def save_youtube_comments(video_url, sample_num = 100, api_key=""):
     """
     Save youtube video comments to a CSV file.
     """
-    if api_key == "" and API_KEY != "": 
-        api_key = API_KEY
-
-    if api_key == "":
-        print("Please replace 'API_KEY' with your actual YouTube Data API key.")
-        return
-    
+    if api_key == "": 
+        api_key = get_api_key()
 
     print(f"Fetching comments for: {video_url}")
     video_comments = get_video_comments(video_url, api_key, max_results=100)
@@ -169,11 +182,10 @@ def save_youtube_comments(video_url, sample_num = 100, api_key=""):
     else:
         print("No comments found or an error occurred.")
 
-
-if __name__ == "__main__":
-    # Example for calling the function
-    # save_youtube_comments("https://youtu.be/1k4EQaBiOZc?si=wVOOcKxk_dZJhAiu")
-
+def save_youtube_comments_cli(): 
+    """
+    A command line interface for obtaining youtube video comments. 
+    """
     if not (len(sys.argv) == 2 or len(sys.argv) == 3):
         print("Usage: python get_youtube_comments.py <video_title> <sample_num>")
         sys.exit(1)
@@ -189,3 +201,10 @@ if __name__ == "__main__":
             sys.exit(1)
 
     save_youtube_comments(video_title, sample_num)
+
+
+if __name__ == "__main__":
+    # Example for calling the function
+    # save_youtube_comments("https://youtu.be/1k4EQaBiOZc?si=wVOOcKxk_dZJhAiu")
+
+    api_key = get_api_key()
