@@ -1,6 +1,6 @@
 # YouTube Product Review Sentiment Analyzer
 
-## Introduction
+## 📌 Introduction
 
 Our project analyzes comment sentiment on Youtube product review videos. To achieve this, we fine-tuned a pre-trained **BERT** model (`"bert-base-uncased"`) with 1,185 manually labeled entries. 
 
@@ -8,10 +8,17 @@ To download our fine-tuned model, click [here](https://drive.google.com/file/d/1
 
 We also built a user-friendly web interface, developed with Streamlit, enabling users to input a video URL to receive a summarized sentiment analysis for both the product and the video.
 
-This work represents our final course project for ISE 540 (Text Analytics), completed by Zijin Qin, Aria Xu, Abhijeet Nijjar, and Junhao Liang.
+This work represents our final course project for **ISE 540 (Text Analytics)**, completed by ***Zijin Qin***, ***Aria Xu***, ***Abhijeet Nijjar***, and ***Junhao Liang***.
+
+## 👥 Team
+
+- [Zijin Qin](https://github.com/Jziumo)
+- [Aria Xu](https://github.com/xxy614)
+- Abhijeet Nijjar
+- Junhao Liang
 
 
-## How to Deploy Application/Project
+## 🚀 How to Deploy Application/Project
 
 ### Clone the Project Files
 
@@ -111,6 +118,6 @@ your_project_root/
 ```
 
 
-## Other Links: 
+## 🔗 Other Links: 
 
 [Tutorial: Label the Data](./doc/label_data_tutorial.md)
